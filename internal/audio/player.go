@@ -43,7 +43,8 @@ func PlayFile(path string, volume int) error {
 	deviceConfig.Playback.Format = malgo.FormatS16
 	deviceConfig.Playback.Channels = 2
 	deviceConfig.SampleRate = uint32(decoder.SampleRate())
-	deviceConfig.PerformanceProfile = malgo.LowLatency
+	deviceConfig.PerformanceProfile = malgo.Conservative
+	deviceConfig.PeriodSizeInMilliseconds = 50
 
 	reader := &pcmReader{data: pcm, volume: float32(volume) / 100}
 	device, err := malgo.InitDevice(ctx.Context, deviceConfig, malgo.DeviceCallbacks{
@@ -62,10 +63,7 @@ func PlayFile(path string, volume int) error {
 	}
 	// Wait for the decoded PCM stream to be consumed.
 	bytesPerSecond := int(decoder.SampleRate()) * 2 * 2
-	durationSeconds := float64(len(pcm)) / float64(bytesPerSecond)
-	if durationSeconds < 0.01 {
-		durationSeconds = 0.01
-	}
+	durationSeconds := (float64(len(pcm)) / float64(bytesPerSecond)) + 0.15
 	<-reader.doneAfter(durationSeconds)
 	return nil
 }
