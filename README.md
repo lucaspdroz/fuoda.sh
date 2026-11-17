@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/fuoda.sh.png" alt="fuoda.sh" width="500">
+</p>
+
 # fuoda.sh
 
 CLI em Go para reproduzir efeitos sonoros no terminal e em scripts.
