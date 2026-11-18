@@ -1,4 +1,4 @@
-name: Build & Release
+name: Build & Release (Linux)
 
 on:
   push:
@@ -14,29 +14,9 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build (${{ matrix.target }})
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: linux-amd64
-            os: ubuntu-latest
-            goos: linux
-            goarch: amd64
-            artifact: fuoda.sh-linux-amd64
-          - target: macos-arm64
-            os: macos-latest
-            goos: darwin
-            goarch: arm64
-            artifact: fuoda.sh-darwin-arm64
-          - target: macos-amd64
-            os: macos-latest
-            goos: darwin
-            goarch: amd64
-            artifact: fuoda.sh-darwin-amd64
-
-    runs-on: ${{ matrix.os }}
+  build-linux:
+    name: Build Linux (amd64)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout do código
@@ -48,48 +28,42 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Instalar dependências de áudio (Linux)
-        if: matrix.goos == 'linux'
+      - name: Instalar dependências de áudio (ALSA)
         run: |
           sudo apt-get update
           sudo apt-get install -y libasound2-dev pkg-config
 
-      - name: Compilar binário
+      - name: Compilar binário Linux
         env:
           CGO_ENABLED: 1
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
+          GOOS: linux
+          GOARCH: amd64
         run: |
           mkdir -p dist
-          go build -trimpath -ldflags="-s -w" -o dist/${{ matrix.artifact }} ./cmd/fuoda.sh
-          chmod +x dist/${{ matrix.artifact }}
-
-      - name: Assinar binário (macOS)
-        if: matrix.goos == 'darwin'
-        run: |
-          codesign -s - -f dist/${{ matrix.artifact }}
+          go build -trimpath -ldflags="-s -w" -o dist/fuoda.sh-linux-amd64 ./cmd/fuoda.sh
+          chmod +x dist/fuoda.sh-linux-amd64
 
       - name: Upload do artefato
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: dist/${{ matrix.artifact }}
+          name: fuoda.sh-linux-amd64
+          path: dist/fuoda.sh-linux-amd64
 
   release:
-    name: Criar GitHub Release
-    needs: build
+    name: Publicar GitHub Release
+    needs: build-linux
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
 
     steps:
-      - name: Baixar todos os artefatos compilados
+      - name: Baixar artefato Linux
         uses: actions/download-artifact@v4
         with:
+          name: fuoda.sh-linux-amd64
           path: artifacts
-          merge-multiple: true
 
-      - name: Publicar Release com os binários
+      - name: Criar Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/*
+          files: artifacts/fuoda.sh-linux-amd64
           generate_release_notes: true
