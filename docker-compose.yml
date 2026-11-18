@@ -1,0 +1,24 @@
+services:
+  fuoda:
+    build: .
+    image: fuoda-dev
+    container_name: fuoda-dev
+    stdin_open: true
+    tty: true
+    working_dir: /app
+    ports:
+      - "2222:2222"
+    environment:
+      # Servidor PulseAudio do WSLg (Docker Desktop com backend WSL2)
+      - PULSE_SERVER=unix:/mnt/wslg/PulseServer
+    volumes:
+      - .:/app
+      - /run/desktop/mnt/host/wslg:/mnt/wslg
+      - go-mod:/go/pkg/mod
+      - go-build:/root/.cache/go-build
+      - fuoda-home:/root/.local/share/fuoda.sh
+
+volumes:
+  go-mod:
+  go-build:
+  fuoda-home:

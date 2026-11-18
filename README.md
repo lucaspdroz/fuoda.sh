@@ -79,3 +79,14 @@ ssh localhost -p 2222
 
 ssh-keygen -f '/home/lodash/.ssh/known_hosts' -R '[localhost]:2222'
 ssh localhost -p 2222
+## Testando no Windows (Docker)
+
+Requer Docker Desktop com backend WSL2 (o áudio sai pelo PulseAudio do WSLg).
+
+```bash
+docker compose build
+docker compose run --rm --service-ports fuoda   # abre um shell Linux em /app
+make install                                    # dentro do container
+fuoda.sh success
+fuoda.sh ssh --serve :2222                       # conecte do Windows: ssh localhost -p 2222
+```
