@@ -13,11 +13,13 @@ import (
 var defaultEvents = map[string]string{
 	"success":      "success.mp3",
 	"error":        "error.mp3",
-	"fah":          "fah.mp3",
 	"warning":      "mac-quack.mp3",
-	"wow":          "anime-wow-sound-effect.mp3",
-	"bolso":        "bolsonaro-pegaram-meu-telefone.mp3",
 	"notification": "notification.mp3",
+}
+
+func ConfigDir() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".config", "fuoda.sh")
 }
 
 func SoundDir() string {
@@ -25,9 +27,42 @@ func SoundDir() string {
 	return filepath.Join(home, ".local", "share", "fuoda.sh", "sounds")
 }
 
+func ThemesDir() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".local", "share", "fuoda.sh", "themes")
+}
+
+func ActiveTheme() string {
+	data, err := os.ReadFile(filepath.Join(ConfigDir(), "theme"))
+	if err != nil {
+		return "default"
+	}
+	theme := strings.TrimSpace(string(data))
+	if theme == "" {
+		return "default"
+	}
+	return theme
+}
+
+func SetActiveTheme(theme string) error {
+	if err := os.MkdirAll(ConfigDir(), 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(ConfigDir(), "theme"), []byte(strings.TrimSpace(theme)+"\n"), 0644)
+}
+
 func EventFile(event string) (string, error) {
-	if value, ok := readEvents()[event]; ok {
+	if value, ok := readEvents(filepath.Join(ConfigDir(), "events.conf"))[event]; ok {
 		return value, nil
+	}
+	theme := ActiveTheme()
+	if theme != "default" {
+		if value, ok := readEvents(filepath.Join(ThemesDir(), theme, "events.conf"))[event]; ok {
+			return value, nil
+		}
+		if _, ok := defaultEvents[event]; ok {
+			return event + ".mp3", nil
+		}
 	}
 	if value, ok := defaultEvents[event]; ok {
 		return value, nil
@@ -37,10 +72,21 @@ func EventFile(event string) (string, error) {
 
 func ListEvents() []string {
 	merged := make(map[string]string, len(defaultEvents))
+	theme := ActiveTheme()
+
 	for k, v := range defaultEvents {
-		merged[k] = v
+		if theme != "default" {
+			merged[k] = k + ".mp3"
+		} else {
+			merged[k] = v
+		}
 	}
-	for k, v := range readEvents() {
+	if theme != "default" {
+		for k, v := range readEvents(filepath.Join(ThemesDir(), theme, "events.conf")) {
+			merged[k] = v
+		}
+	}
+	for k, v := range readEvents(filepath.Join(ConfigDir(), "events.conf")) {
 		merged[k] = v
 	}
 
@@ -57,9 +103,7 @@ func ListEvents() []string {
 	return lines
 }
 
-func readEvents() map[string]string {
-	home, _ := os.UserHomeDir()
-	path := filepath.Join(home, ".config", "fuoda.sh", "events.conf")
+func readEvents(path string) map[string]string {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil
@@ -78,23 +122,8 @@ func readEvents() map[string]string {
 			events[strings.TrimSpace(key)] = strings.TrimSpace(value)
 		}
 	}
+	if scanner.Err() != nil {
+		return nil
+	}
 	return events
-}
-
-func ListSounds() ([]string, error) {
-	entries, err := os.ReadDir(SoundDir())
-	if os.IsNotExist(err) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	var names []string
-	for _, entry := range entries {
-		if !entry.IsDir() && strings.EqualFold(filepath.Ext(entry.Name()), ".mp3") {
-			names = append(names, entry.Name())
-		}
-	}
-	sort.Strings(names)
-	return names, nil
 }

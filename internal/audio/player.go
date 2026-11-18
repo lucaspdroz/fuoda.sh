@@ -61,9 +61,11 @@ func PlayFile(path string, volume int) error {
 	if err := device.Start(); err != nil {
 		return fmt.Errorf("iniciando reprodução: %w", err)
 	}
-	// Wait for the decoded PCM stream to be consumed.
 	bytesPerSecond := int(decoder.SampleRate()) * 2 * 2
 	durationSeconds := (float64(len(pcm)) / float64(bytesPerSecond)) + 0.15
+	if durationSeconds < 0.05 {
+		durationSeconds = 0.05
+	}
 	<-reader.doneAfter(durationSeconds)
 	return nil
 }
@@ -75,7 +77,6 @@ type pcmReader struct {
 }
 
 func (r *pcmReader) read(dst []byte) {
-	// PCM is signed 16-bit little-endian. Apply gain per sample, not per byte.
 	for i := 0; i+1 < len(dst); i += 2 {
 		if r.offset+1 >= len(r.data) {
 			dst[i], dst[i+1] = 0, 0
@@ -97,11 +98,9 @@ func (r *pcmReader) read(dst []byte) {
 	}
 }
 
-// doneAfter is isolated so playback duration remains based on decoded PCM size.
 func (r *pcmReader) doneAfter(seconds float64) <-chan struct{} {
 	ch := make(chan struct{})
 	go func() {
-		// The actual timer is in the standard library, avoiding extra dependencies.
 		timer := timeNewTimer(seconds)
 		<-timer
 		close(ch)
