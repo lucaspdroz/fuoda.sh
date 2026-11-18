@@ -15,7 +15,10 @@ fuoda.sh/
 ├── cmd/
 │   └── fuoda.sh/
 │       ├── main.go
-│       └── assets/          # Coloque seus arquivos .mp3 aqui antes de compilar
+│       ├── assets/          # Coloque seus arquivos .mp3 aqui antes de compilar
+│       └── themes/
+│         ├── Default/
+│         └── [custom-theme]/ 
 └── internal/
     ├── audio/
     │   ├── player.go        # Player MP3 via malgo (otimizado para Linux e Mac M1)
@@ -28,7 +31,7 @@ fuoda.sh/
 
 ## Instalação
 
-1. Coloque seus arquivos `.mp3` (`success.mp3`, `error.mp3`, `faaah.mp3`, `mac-quack.mp3`, `anime-wow-sound-effect.mp3`, `bolsonaro-pegaram-meu-telefone.mp3`, `notification.mp3`) dentro de `cmd/fuoda.sh/assets/` ou em `~/.local/share/fuoda.sh/sounds/`.
+1. Coloque seus arquivos `.mp3` (`success.mp3`, `error.mp3`, `faaah.mp3`, `notification.mp3`) dentro de `cmd/fuoda.sh/assets/` ou em `~/.local/share/fuoda.sh/theme/[theme-name]`.
 2. Sincronize as dependências e instale (funciona no Linux e macOS):
 
 ```bash
@@ -40,8 +43,8 @@ make install
 
 ### Efeitos Sonoros no Terminal
 ```bash
-fuoda.sh wow
-fuoda.sh --sync --volume 80 warning
+fuoda.sh error
+fuoda.sh -volume 12 success  
 fuoda.sh list
 ```
 
@@ -53,7 +56,7 @@ fuoda.sh ssh --keygen
 
 2. Inicie o servidor SSH:
 ```bash
-fuoda.sh ssh --addr :2222
+fuoda.sh ssh --serve :2222
 ```
 
 3. Conecte via SSH:
