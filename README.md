@@ -90,3 +90,12 @@ make install                                    # dentro do container
 fuoda.sh success
 fuoda.sh ssh --serve :2222                       # conecte do Windows: ssh localhost -p 2222
 ```
+
+#### Release (linux & Mac)
+
+```bash
+git tag v0.0.3c               
+git push origin v0.0.3
+
+./utils/release-macos.sh v0.0.3
+```
