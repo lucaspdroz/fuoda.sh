@@ -76,6 +76,7 @@ Mapeamentos:
 }
 
 func playEventAsync(event string, volume int) {
+
 	name, err := config.EventFile(event)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[evento de audio %q não mapeado: ] %v\n", event, err)
@@ -87,16 +88,13 @@ func playEventAsync(event string, volume int) {
 		return
 	}
 
-	go func() {
-		defer func() {
-			if filepath.Dir(path) == os.TempDir() && strings.HasPrefix(filepath.Base(path), "fuoda.sh-") {
-				_ = os.Remove(path)
-			}
-		}()
-		if err := audio.PlayFile(path, volume); err != nil {
-			fmt.Fprintf(os.Stderr, "[audio] erro ao reproduzir %q: %v\n", path, err)
+	if err := launch(path, volume, false); err != nil {
+		fmt.Fprintf(os.Stderr, "[audio] erro ao iniciar reprodução de %q: %v\n", path, err)
+
+		if filepath.Dir(path) == os.TempDir() && strings.HasPrefix(filepath.Base(path), "fuoda.sh-") {
+			_ = os.Remove(path)
 		}
-	}()
+	}
 }
 
 func sshCommand(args []string) error {
@@ -247,9 +245,27 @@ func resolveAudio(name string) (string, error) {
 		}
 		return "", fmt.Errorf("arquivo não encontrado: %s", name)
 	}
+
 	if isFile(name) {
 		abs, _ := filepath.Abs(name)
 		return abs, nil
+	}
+
+	// Permite selecionar diretamente um arquivo dentro de assets.
+	cleanName := filepath.ToSlash(filepath.Clean(name))
+
+	if strings.Contains(cleanName, "/") {
+		if cleanName == ".." || strings.HasPrefix(cleanName, "../") {
+			return "", fmt.Errorf("caminho de áudio inválido: %s", name)
+		}
+
+		assetPath := "assets/" + cleanName
+
+		if tmpPath, ok := extractEmbedded(assetPath); ok {
+			return tmpPath, nil
+		}
+
+		return "", fmt.Errorf("áudio não encontrado: %s", name)
 	}
 
 	baseName := filepath.Base(name)
@@ -262,29 +278,29 @@ func resolveAudio(name string) (string, error) {
 		theme = "default"
 	}
 
-	// 1. Tema externo (~/.local/share/fuoda.sh/themes/<tema>/<arquivo>)
+	// 1. Tema externo
 	extThemeFile := filepath.Join(config.ThemesDir(), theme, baseName)
 	if isFile(extThemeFile) {
 		return extThemeFile, nil
 	}
 
-	// 2. Tema embutido (assets/themes/<tema>/<arquivo>)
+	// 2. Tema embutido
 	if tmpPath, ok := extractEmbedded("assets/themes/" + theme + "/" + baseName); ok {
 		return tmpPath, nil
 	}
 
-	// 3. Áudios externos gerais (~/.local/share/fuoda.sh/sounds/<arquivo>)
+	// 3. Áudios externos gerais
 	external := filepath.Join(config.SoundDir(), baseName)
 	if isFile(external) {
 		return external, nil
 	}
 
-	// 4. Assets padrão embutidos na raiz (assets/<arquivo>)
+	// 4. Assets padrão
 	if tmpPath, ok := extractEmbedded("assets/" + baseName); ok {
 		return tmpPath, nil
 	}
 
-	return "", fmt.Errorf("áudio %q não encontrado (tema: %s); procure em %s", name, theme, config.SoundDir())
+	return "", fmt.Errorf("áudio %q não encontrado (tema: %s)", name, theme)
 }
 
 func extractEmbedded(embeddedPath string) (string, bool) {
