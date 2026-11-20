@@ -12,9 +12,9 @@ import (
 
 var defaultEvents = map[string]string{
 	"success":      "success.mp3",
-	"error":        "error.mp3",
-	"warning":      "mac-quack.mp3",
-	"notification": "notification.mp3",
+	"error":        "themes/meme/faah.mp3",
+	"warning":      "themes/default/warning.mp3",
+	"notification": "themes/msn/success.mp3",
 }
 
 func ConfigDir() string {

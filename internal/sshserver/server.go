@@ -210,6 +210,7 @@ func (m handshakeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.progress = append(m.progress, key)
+
 		if len(m.progress) == m.expectedLen {
 			if verifySequence(m.progress, m.expectedHash) {
 				m.passed = true
@@ -267,7 +268,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 			}
 
 			if onEvent != nil {
-				onEvent("notification")
+				onEvent("warning")
 			}
 
 			p := tea.NewProgram(initialHandshakeModel(cred), bubbletea.MakeOptions(s)...)
@@ -298,7 +299,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 				onEvent("success")
 			}
 
-			wish.Println(s, "\r\n✔ Handshake validado! Injetando ambiente e abrindo shell...\r\n")
+			wish.Println(s, "\r\n✔ Handshake validado! Injetando ambiente e abrindo shell...")
 
 			cmd := exec.Command(defaultShell())
 			cmd.Env = append(os.Environ(),
