@@ -49,7 +49,7 @@ fuoda.sh list
 ```
 
 ### Servidor SSH com Handshake Sonoro
-1. Gere sua sequência secreta de teclas (toca `success` ao salvar ou `warning` ao cancelar):
+1. Gere sua sequência secreta de teclas (toca `success` ao salvar ou `error` ao cancelar):
 ```bash
 fuoda.sh ssh --keygen
 ```
@@ -74,7 +74,7 @@ ssh localhost -p 2222
 | Conexão sem PTY / keygen cancelado | `warning` | `mac-quack.mp3` |
 
 
-### Caso de warning por
+### Caso de warning por falha de credencial
 
 
 ssh-keygen -f '/home/lodash/.ssh/known_hosts' -R '[localhost]:2222'
