@@ -285,7 +285,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 			if !res.passed {
 				if onEvent != nil {
 					if res.timedOut {
-						onEvent("faaah")
+						onEvent("success")
 					} else {
 						onEvent("error")
 					}
