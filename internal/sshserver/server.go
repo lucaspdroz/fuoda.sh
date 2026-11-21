@@ -298,7 +298,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 				onEvent("success")
 			}
 
-			wish.Println(s, "\r\n✔ Handshake validado! Injetando ambiente e abrindo shell...\r\n")
+			wish.Println(s, "\r\n✔ Handshake validado! Injetando ambiente e abrindo shell...")
 
 			cmd := exec.Command(defaultShell())
 			cmd.Env = append(os.Environ(),
