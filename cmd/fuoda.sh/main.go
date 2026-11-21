@@ -273,17 +273,30 @@ func resolveAudio(name string) (string, error) {
 		return tmpPath, nil
 	}
 
-	// 3. Áudios externos gerais (~/.local/share/fuoda.sh/sounds/<arquivo>)
+	// 3. Áudios externos gerais
 	external := filepath.Join(config.SoundDir(), baseName)
 	if isFile(external) {
 		return external, nil
 	}
 
-	// 4. Assets padrão embutidos na raiz (assets/<arquivo>)
+	// 4. Fallback para o tema default
+	if theme != "default" {
+		// Tema default externo
+		defaultThemeFile := filepath.Join(config.ThemesDir(), "default", baseName)
+		if isFile(defaultThemeFile) {
+			return defaultThemeFile, nil
+		}
+
+		// Tema default embutido
+		if tmpPath, ok := extractEmbedded("assets/themes/default/" + baseName); ok {
+			return tmpPath, nil
+		}
+	}
+
+	// 5. Assets padrão embutidos na raiz
 	if tmpPath, ok := extractEmbedded("assets/" + baseName); ok {
 		return tmpPath, nil
 	}
-
 	return "", fmt.Errorf("áudio %q não encontrado (tema: %s); procure em %s", name, theme, config.SoundDir())
 }
 
