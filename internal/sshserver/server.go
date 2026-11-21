@@ -138,7 +138,7 @@ func RunKeygen(credPath string, onEvent SoundCallback) error {
 	res := finalModel.(keygenModel)
 	if !res.done || len(res.keys) == 0 {
 		if onEvent != nil {
-			onEvent("warning")
+			onEvent("error")
 		}
 		fmt.Println("Operação cancelada.")
 		return nil
@@ -210,6 +210,7 @@ func (m handshakeModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		m.progress = append(m.progress, key)
+
 		if len(m.progress) == m.expectedLen {
 			if verifySequence(m.progress, m.expectedHash) {
 				m.passed = true
@@ -259,7 +260,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 			ptyReq, winCh, isPty := s.Pty()
 			if !isPty {
 				if onEvent != nil {
-					onEvent("warning")
+					onEvent("error")
 				}
 				wish.Println(s, "Este servidor exige um terminal interativo (PTY).")
 				s.Exit(1)
@@ -267,7 +268,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 			}
 
 			if onEvent != nil {
-				onEvent("notification")
+				onEvent("error")
 			}
 
 			p := tea.NewProgram(initialHandshakeModel(cred), bubbletea.MakeOptions(s)...)
@@ -284,7 +285,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 			if !res.passed {
 				if onEvent != nil {
 					if res.timedOut {
-						onEvent("faaah")
+						onEvent("success")
 					} else {
 						onEvent("error")
 					}
@@ -298,7 +299,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 				onEvent("success")
 			}
 
-			wish.Println(s, "\r\n✔ Handshake validado! Injetando ambiente e abrindo shell...\r\n")
+			wish.Println(s, "\r\n✔ Handshake validado! Injetando ambiente e abrindo shell...")
 
 			cmd := exec.Command(defaultShell())
 			cmd.Env = append(os.Environ(),

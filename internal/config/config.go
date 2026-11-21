@@ -11,10 +11,8 @@ import (
 )
 
 var defaultEvents = map[string]string{
-	"success":      "success.mp3",
-	"error":        "error.mp3",
-	"warning":      "mac-quack.mp3",
-	"notification": "notification.mp3",
+	"success": "success.mp3",
+	"error":   "error.mp3",
 }
 
 func ConfigDir() string {
@@ -55,18 +53,18 @@ func EventFile(event string) (string, error) {
 	if value, ok := readEvents(filepath.Join(ConfigDir(), "events.conf"))[event]; ok {
 		return value, nil
 	}
+
 	theme := ActiveTheme()
 	if theme != "default" {
 		if value, ok := readEvents(filepath.Join(ThemesDir(), theme, "events.conf"))[event]; ok {
 			return value, nil
 		}
-		if _, ok := defaultEvents[event]; ok {
-			return event + ".mp3", nil
-		}
 	}
+
 	if value, ok := defaultEvents[event]; ok {
 		return value, nil
 	}
+
 	return "", errors.New("evento desconhecido; configure-o em ~/.config/fuoda.sh/events.conf")
 }
 
