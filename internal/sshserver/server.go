@@ -345,6 +345,10 @@ func RunServer(cfg ServerConfig) error {
 		return fmt.Errorf("nenhuma credencial encontrada em %s; rode primeiro: fuoda.sh ssh --keygen", cfg.CredPath)
 	}
 
+	if err := os.MkdirAll(filepath.Dir(cfg.HostKeyPath), 0700); err != nil {
+		return fmt.Errorf("erro ao criar diretório da chave SSH: %w", err)
+	}
+
 	srv, err := wish.NewServer(
 		wish.WithAddress(cfg.Addr),
 		wish.WithHostKeyPath(cfg.HostKeyPath),

@@ -73,6 +73,6 @@ ssh localhost -p 2222
 
 ### Caso de warning por
 
+limpe o registro antigo do SSH:
 
-ssh-keygen -f '/home/lodash/.ssh/known_hosts' -R '[localhost]:2222'
-ssh localhost -p 2222
+ssh-keygen -R '[localhost]:2222'
