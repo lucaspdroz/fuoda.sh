@@ -67,15 +67,13 @@ ssh localhost -p 2222
 ### Eventos Sonoros Disparados no SSH
 | Situação | Evento Disparado | Áudio Padrão |
 | :--- | :--- | :--- |
-| Servidor iniciado / nova conexão recebida | `notification` | `notification.mp3` |
 | Sequência de handshake correta | `success` | `success.mp3` |
 | Sequência errada ou cancelada (`Esc`/`Ctrl+C`) | `error` | `error.mp3` |
-| Tempo esgotado (10s) no handshake | `faaah` | `faaah.mp3` |
-| Conexão sem PTY / keygen cancelado | `warning` | `mac-quack.mp3` |
+| Tempo esgotado (10s) no handshake | `error` | `error.mp3` |
+| Conexão sem PTY / keygen cancelado | `error` | `error.mp3` |
 
 
 ### Caso de warning por falha de credencial
-
 
 ssh-keygen -f '/home/lodash/.ssh/known_hosts' -R '[localhost]:2222'
 ssh localhost -p 2222

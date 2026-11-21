@@ -138,7 +138,7 @@ func RunKeygen(credPath string, onEvent SoundCallback) error {
 	res := finalModel.(keygenModel)
 	if !res.done || len(res.keys) == 0 {
 		if onEvent != nil {
-			onEvent("warning")
+			onEvent("error")
 		}
 		fmt.Println("Operação cancelada.")
 		return nil
@@ -260,7 +260,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 			ptyReq, winCh, isPty := s.Pty()
 			if !isPty {
 				if onEvent != nil {
-					onEvent("warning")
+					onEvent("error")
 				}
 				wish.Println(s, "Este servidor exige um terminal interativo (PTY).")
 				s.Exit(1)
@@ -268,7 +268,7 @@ func handshakeMiddleware(cred Credential, onEvent SoundCallback) wish.Middleware
 			}
 
 			if onEvent != nil {
-				onEvent("warning")
+				onEvent("error")
 			}
 
 			p := tea.NewProgram(initialHandshakeModel(cred), bubbletea.MakeOptions(s)...)
