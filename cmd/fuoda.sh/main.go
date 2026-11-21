@@ -59,9 +59,9 @@ func usage() {
 	fmt.Print(`fuoda.sh - efeitos sonoros para scripts, terminal e servidor SSH
 
 Uso:
-  fuoda.sh [--volume 0..100] [--sync] <evento|arquivo.mp3>
-  fuoda.sh play [--volume 0..100] [--sync] <evento|arquivo.mp3>
-  fuoda.sh trigger [--volume 0..100] [--sync] <evento>
+  fuoda.sh [--volume 0..100] [test] <evento|arquivo.mp3>
+  fuoda.sh play [--volume 0..100] [test] <evento|arquivo.mp3>
+  fuoda.sh trigger [--volume 0..100] [test] <evento>
   fuoda.sh list
 
 Servidor SSH com Handshake Sonoro:
@@ -103,7 +103,7 @@ func sshCommand(args []string) error {
 	fs := flag.NewFlagSet("ssh", flag.ContinueOnError)
 	keygenFlag := fs.Bool("keygen", false, "Gera e salva uma nova credencial criptografada")
 	credFile := fs.String("cred", sshserver.DefaultCredPath(), "Caminho do arquivo de credencial")
-	addr := fs.String("addr", ":2222", "Endereço/porta de escuta do servidor SSH")
+	addr := fs.String("serve", ":2222", "Endereço/porta de escuta do servidor SSH")
 	home, _ := os.UserHomeDir()
 	defaultHostKey := filepath.Join(home, ".config", "fuoda.sh", "host_ed25519")
 	hostKey := fs.String("host-key", defaultHostKey, "Caminho da chave de host SSH")
@@ -131,7 +131,7 @@ func sshCommand(args []string) error {
 func playCommand(args []string) error {
 	fs := flag.NewFlagSet("play", flag.ContinueOnError)
 	volume := fs.Int("volume", 100, "volume de 0 a 100")
-	syncPlay := fs.Bool("sync", false, "aguardar o fim da reprodução")
+	syncPlay := fs.Bool("test", false, "aguardar o fim da reprodução")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -214,7 +214,7 @@ func listAllThemes() []string {
 func triggerCommand(args []string) error {
 	fs := flag.NewFlagSet("trigger", flag.ContinueOnError)
 	volume := fs.Int("volume", 100, "volume de 0 a 100")
-	syncPlay := fs.Bool("sync", false, "aguardar o fim da reprodução")
+	syncPlay := fs.Bool("test", false, "aguardar o fim da reprodução")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -257,17 +257,20 @@ func resolveAudio(name string) (string, error) {
 		baseName += ".mp3"
 	}
 
-	theme := config.ActiveTheme()
-	if theme != "default" {
-		// 1. Tema externo (~/.local/share/fuoda.sh/themes/<tema>/<arquivo>)
-		extThemeFile := filepath.Join(config.ThemesDir(), theme, baseName)
-		if isFile(extThemeFile) {
-			return extThemeFile, nil
-		}
-		// 2. Tema embutido (assets/themes/<tema>/<arquivo>)
-		if tmpPath, ok := extractEmbedded("assets/themes/" + theme + "/" + baseName); ok {
-			return tmpPath, nil
-		}
+	theme := strings.ToLower(strings.TrimSpace(config.ActiveTheme()))
+	if theme == "" {
+		theme = "default"
+	}
+
+	// 1. Tema externo (~/.local/share/fuoda.sh/themes/<tema>/<arquivo>)
+	extThemeFile := filepath.Join(config.ThemesDir(), theme, baseName)
+	if isFile(extThemeFile) {
+		return extThemeFile, nil
+	}
+
+	// 2. Tema embutido (assets/themes/<tema>/<arquivo>)
+	if tmpPath, ok := extractEmbedded("assets/themes/" + theme + "/" + baseName); ok {
+		return tmpPath, nil
 	}
 
 	// 3. Áudios externos gerais (~/.local/share/fuoda.sh/sounds/<arquivo>)
@@ -276,7 +279,7 @@ func resolveAudio(name string) (string, error) {
 		return external, nil
 	}
 
-	// 4. Assets padrão embutidos (assets/<arquivo>)
+	// 4. Assets padrão embutidos na raiz (assets/<arquivo>)
 	if tmpPath, ok := extractEmbedded("assets/" + baseName); ok {
 		return tmpPath, nil
 	}
