@@ -13,9 +13,11 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"fuoda.sh/internal/audio"
 	"fuoda.sh/internal/config"
+	"fuoda.sh/internal/shell"
 	"fuoda.sh/internal/sshserver"
 )
 
@@ -42,6 +44,8 @@ func main() {
 		err = sshCommand(append([]string{"--keygen"}, os.Args[2:]...))
 	case "ssh":
 		err = sshCommand(os.Args[2:])
+	case "shell":
+		err = shellCommand(os.Args[2:])
 	case "__play":
 		err = internalPlay(os.Args[2:])
 	case "help", "--help", "-h":
@@ -63,6 +67,11 @@ Uso:
   fuoda.sh play [--volume 0..100] [test] <evento|arquivo.mp3>
   fuoda.sh trigger [--volume 0..100] [test] <evento>
   fuoda.sh list
+
+Shell com sons (wrapper de PTY):
+  fuoda.sh shell [--shell /bin/zsh] [--volume 100] [--interval 300ms] [-- args do shell]
+  Dentro dele, qualquer saída com "[play <evento>]" toca o som do evento.
+  Versão invisível: printf '\e]777;fuoda;<evento>\a'
 
 Servidor SSH com Handshake Sonoro:
   fuoda.sh ssh [--keygen] [--cred caminho.json] [--addr :2222] [--volume 100]
@@ -126,6 +135,46 @@ func sshCommand(args []string) error {
 		CredPath:    *credFile,
 		OnEvent:     onEvent,
 	})
+}
+
+func shellCommand(args []string) error {
+	fs := flag.NewFlagSet("shell", flag.ContinueOnError)
+	sh := fs.String("shell", "", "shell a executar (padrão: $SHELL)")
+	volume := fs.Int("volume", 100, "volume dos sons (0 a 100)")
+	interval := fs.Duration("interval", 300*time.Millisecond, "intervalo mínimo entre dois sons do mesmo evento")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *volume < 0 || *volume > 100 {
+		return errors.New("volume deve estar entre 0 e 100")
+	}
+	code, err := shell.Run(shell.Config{
+		Shell:       *sh,
+		Args:        fs.Args(),
+		OnEvent:     func(event string) { playEventQuiet(event, *volume) },
+		MinInterval: *interval,
+	})
+	if err != nil {
+		return err
+	}
+	os.Exit(code)
+	return nil
+}
+
+// playEventQuiet toca o som de um evento num processo separado, sem escrever
+// nada no terminal: dentro do "fuoda.sh shell" qualquer mensagem de erro ou
+// aviso da biblioteca de áudio sujaria a tela do usuário. Eventos sem som
+// mapeado são ignorados.
+func playEventQuiet(event string, volume int) {
+	name, err := config.EventFile(event)
+	if err != nil {
+		return
+	}
+	path, err := resolveAudio(name)
+	if err != nil {
+		return
+	}
+	_ = launch(path, volume, false)
 }
 
 func playCommand(args []string) error {

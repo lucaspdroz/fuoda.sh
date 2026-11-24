@@ -10,6 +10,7 @@ require (
 	github.com/creack/pty v1.1.24
 	github.com/gen2brain/malgo v0.11.24
 	github.com/hajimehoshi/go-mp3 v0.3.4
+	golang.org/x/term v0.30.0
 )
 
 require (
