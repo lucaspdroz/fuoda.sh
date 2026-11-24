@@ -25,6 +25,9 @@ fuoda.sh/
     │   └── timer.go
     ├── config/
     │   └── config.go        # Mapeamento de eventos e leitura de events.conf
+    ├── shell/
+    │   ├── shell.go         # fuoda.sh shell: wrapper de PTY em volta do $SHELL
+    │   └── detector.go      # Detecta "[play <evento>]" e OSC 777 na saída
     └── sshserver/
         └── server.go        # Servidor SSH (Wish + Bubbletea) com triggers sonoros
 ```
@@ -47,6 +50,32 @@ fuoda.sh error
 fuoda.sh -volume 12 success  
 fuoda.sh list
 ```
+
+### Shell com sons (`fuoda.sh shell`)
+
+Abre o seu shell de sempre (zsh, bash, fish…) dentro de um wrapper de PTY. Tudo funciona como antes; a diferença é que qualquer saída com um marcador toca o som do evento:
+
+```bash
+fuoda.sh shell                       # usa o $SHELL
+fuoda.sh shell --shell /bin/zsh      # outro shell
+fuoda.sh shell --volume 40 -- -l     # args depois de "--" vão para o shell
+```
+
+Dentro dele:
+
+```bash
+make && echo "[play success]" || echo "[play error]"   # marcador visível
+printf '\e]777;fuoda;success\a'                       # marcador invisível (OSC)
+```
+
+- Vale para a saída de **qualquer programa**, inclusive de um `ssh` para outra máquina: o som toca na máquina onde o `fuoda.sh shell` está rodando.
+- O nome do evento é o mesmo de `fuoda.sh list`. Eventos sem som mapeado são ignorados.
+- A saída não é alterada: o marcador visível continua aparecendo na tela. Use a versão OSC para não mostrar nada.
+- Cores no meio do marcador e marcadores divididos entre pedaços da saída são detectados.
+- O mesmo evento toca no máximo uma vez a cada `--interval` (padrão 300ms), para um `cat` de um arquivo cheio de marcadores não virar uma rajada.
+- O shell filho recebe `FUODA_SHELL=1`. Abrir um `fuoda.sh shell` dentro de outro é recusado (tocaria cada som duas vezes).
+- Sem terminal (pipe, script), o comando vira o shell direto, sem wrapper.
+- Para usar sempre, prefira configurar o emulador de terminal para abrir `fuoda.sh shell`, em vez de `chsh`: se o wrapper falhar, o login continua funcionando.
 
 ### Servidor SSH com Handshake Sonoro
 1. Gere sua sequência secreta de teclas (toca `success` ao salvar ou `warning` ao cancelar):
